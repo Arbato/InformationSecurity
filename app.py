@@ -213,4 +213,4 @@ IS_PROD = os.environ.get('FLASK_ENV', 'development') == 'production'
 
 if __name__ == '__main__':
     # debug=True только для локальной разработки
-    app.run(debug=True, port=int(os.environ.get('PORT', 5001)))
+    app.run(debug=False, port=int(os.environ.get('PORT', 5001)))
