@@ -207,9 +207,9 @@ class Echo(Resource):
         """
         payload = request.get_json() or {}
         message = payload.get('message', '')
-        # safe = sanitize_for_output(message)
+        safe = sanitize_for_output(message)
         return {
-            'original_received': message,
+            'original_received': safe,
             'note': 'Input sanitized to prevent XSS'
         }, 200
 
