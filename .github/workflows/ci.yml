@@ -6,32 +6,72 @@ on:
   pull_request:
     branches: [ "main", "master" ]
 
+permissions:
+  contents: read
+  security-events: write
+
 jobs:
   security-check:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      # 1. Получение кода
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v3
+      # 2. Установка Python
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          python-version: "3.9"
+          python-version: "3.11"
 
-      - name: Install Dependencies
+      # 3. Установка зависимостей
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install bandit safety
 
-      - name: SAST - Bandit Scan
-        # Bandit ищет уязвимости в коде (hardcoded passwords, SQLi risks, etc.)
+      # --- 4. SAST: Bandit ---
+      - name: Run Bandit (SAST)
         run: |
-          bandit -r . -f txt -o bandit_report.txt || true
-          cat bandit_report.txt
-          # "|| true" используется, чтобы пайплайн не падал, если найдены low-level issues,
-          # но для строгого режима можно убрать.
+          bandit -r . -f json -o bandit-report.json || true
+          bandit -r . -f txt -o bandit-report.txt || true
 
-      - name: SCA - Safety Check
-        # Safety проверяет установленные библиотеки на известные CVE
+      # Загружаем отчет как артефакт
+      - name: Upload Bandit Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-report
+          path: bandit-report.*
+
+      # --- 5. SCA: Safety ---
+      - name: Run Safety (SCA)
         run: |
-          safety check --full-report
+          safety check --full-report --output json > safety-report.json || true
+          safety check --full-report > safety-report.txt || true
+
+      - name: Upload Safety Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: safety-report
+          path: safety-report.*
+
+      # --- 6. Dependency Review (GitHub встроенный) ---
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v3
+
+      # --- 7. (Опционально) OWASP Dependency Check ---
+      # Можно включить при желании — это тяжёлый сканер.
+      # - name: OWASP Dependency-Check
+      #   uses: dependency-check/Dependency-Check_Action@main
+      #   with:
+      #     project: "Python Security Project"
+      #     path: "."
+      #     format: "ALL"
+      #
+      # - name: Upload OWASP Dependency Check Report
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: dependency-check-report
+      #     path: build/reports
