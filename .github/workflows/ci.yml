@@ -58,8 +58,13 @@ jobs:
           path: safety-report.*
 
       # --- 6. Dependency Review (GitHub встроенный) ---
+      # - name: Dependency Review
+      #   uses: actions/dependency-review-action@v3
+
       - name: Dependency Review
+        if: github.event_name == 'pull_request'
         uses: actions/dependency-review-action@v3
+
 
       # --- 7. (Опционально) OWASP Dependency Check ---
       # Можно включить при желании — это тяжёлый сканер.
