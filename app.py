@@ -94,9 +94,6 @@ with app.app_context():
         app.logger.info("Создан тестовый пользователь: admin / password123")
 
 
-# -------------------------
-# Вспомогательные функции (безопасные)
-# -------------------------
 def sanitize_for_output(s: str) -> str:
     """
     Санитизация пользовательского ввода перед включением в ответы API.
@@ -108,9 +105,6 @@ def sanitize_for_output(s: str) -> str:
     return html.escape(str(s))
 
 
-# -------------------------
-# Эндпоинты: регистрация и логин
-# -------------------------
 @auth_ns.route('/signup')
 class Signup(Resource):
     @auth_ns.expect(user_model, validate=True)
@@ -169,9 +163,6 @@ class Login(Resource):
         return {'access_token': access_token}, 200
 
 
-# -------------------------
-# Защищённые ресурсы (требуют JWT)
-# -------------------------
 @api_ns.route('/data')
 class ProtectedData(Resource):
     @api_ns.doc(security='bearerAuth')  # покажет замочек в Swagger и потребует авторизацию
@@ -213,19 +204,13 @@ class Echo(Resource):
             'note': 'Input sanitized to prevent XSS'
         }, 200
 
-
-# -------------------------
-# Пример простого health-check (публичный)
-# -------------------------
 @api.route('/health')
 class Health(Resource):
     def get(self):
         return {'status': 'ok'}, 200
 
+IS_PROD = os.environ.get('FLASK_ENV', 'development') == 'production'
 
-# -------------------------
-# Запуск
-# -------------------------
 if __name__ == '__main__':
     # debug=True только для локальной разработки
     app.run(debug=True, port=int(os.environ.get('PORT', 5001)))
